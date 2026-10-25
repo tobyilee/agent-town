@@ -1,54 +1,56 @@
 {
-  "generator": "placeholder",
-  "frame": 32,
-  "framesPerRow": 4,
-  "characterRows": [
-    "walk_down",
-    "walk_left",
-    "walk_right",
-    "walk_up",
-    "work_down",
-    "work_up",
-    "idle_down"
-  ],
-  "characters": [
-    {
-      "file": "char_0.png",
-      "family": "claude-code"
-    },
-    {
-      "file": "char_1.png",
-      "family": "claude-code"
-    },
-    {
-      "file": "char_2.png",
-      "family": "claude-code"
-    },
-    {
-      "file": "char_3.png",
-      "family": "claude-code"
-    },
-    {
-      "file": "char_4.png",
-      "family": "codex"
-    },
-    {
-      "file": "char_5.png",
-      "family": "codex"
-    },
-    {
-      "file": "char_6.png",
-      "family": "codex"
-    },
-    {
-      "file": "char_7.png",
-      "family": "codex"
-    }
-  ],
+  "generator": "codex",
+  "scale": 2,
+  "character": {
+    "frame": 128,
+    "framesPerRow": 4,
+    "rows": [
+      "walk_down",
+      "walk_left",
+      "walk_right",
+      "walk_up",
+      "work_down",
+      "work_up",
+      "idle_down"
+    ],
+    "list": [
+      {
+        "file": "chars/char_0.png",
+        "family": "claude-code"
+      },
+      {
+        "file": "chars/char_1.png",
+        "family": "claude-code"
+      },
+      {
+        "file": "chars/char_2.png",
+        "family": "claude-code"
+      },
+      {
+        "file": "chars/char_3.png",
+        "family": "claude-code"
+      },
+      {
+        "file": "chars/char_4.png",
+        "family": "codex"
+      },
+      {
+        "file": "chars/char_5.png",
+        "family": "codex"
+      },
+      {
+        "file": "chars/char_6.png",
+        "family": "codex"
+      },
+      {
+        "file": "chars/char_7.png",
+        "family": "codex"
+      }
+    ]
+  },
   "fx": {
     "file": "fx.png",
-    "size": 16,
-    "frames": 2,
+    "size": 64,
     "rows": [
       "thinking",
       "talking",
@@ -62,10 +64,192 @@
       "idle"
     ]
   },
-  "office": {
-    "file": "office.png",
-    "tile": 32,
-    "cols": 34,
-    "rows": 24
+  "textures": {
+    "woodWarm": {
+      "file": "textures/woodWarm.png",
+      "size": 256,
+      "tiles": 4
+    },
+    "herringbone": {
+      "file": "textures/herringbone.png",
+      "size": 256,
+      "tiles": 4
+    },
+    "carpetBlue": {
+      "file": "textures/carpetBlue.png",
+      "size": 256,
+      "tiles": 4
+    },
+    "carpetGreen": {
+      "file": "textures/carpetGreen.png",
+      "size": 256,
+      "tiles": 4
+    },
+    "carpetPurple": {
+      "file": "textures/carpetPurple.png",
+      "size": 256,
+      "tiles": 4
+    },
+    "carpetOrange": {
+      "file": "textures/carpetOrange.png",
+      "size": 256,
+      "tiles": 4
+    },
+    "grass": {
+      "file": "textures/grass.png",
+      "size": 256,
+      "tiles": 4
+    },
+    "concrete": {
+      "file": "textures/concrete.png",
+      "size": 256,
+      "tiles": 4
+    }
+  },
+  "props": {
+    "window": {
+      "file": "props/window.png",
+      "w": 122,
+      "h": 61,
+      "flat": true
+    },
+    "clock": {
+      "file": "props/clock.png",
+      "w": 57,
+      "h": 58,
+      "flat": true
+    },
+    "painting": {
+      "file": "props/painting.png",
+      "w": 58,
+      "h": 47,
+      "flat": true
+    },
+    "desk": {
+      "file": "props/desk.png",
+      "w": 128,
+      "h": 61,
+      "flat": false
+    },
+    "plant": {
+      "file": "props/plant.png",
+      "w": 70,
+      "h": 79,
+      "flat": false
+    },
+    "waterCooler": {
+      "file": "props/waterCooler.png",
+      "w": 47,
+      "h": 122,
+      "flat": false
+    },
+    "shelf": {
+      "file": "props/shelf.png",
+      "w": 104,
+      "h": 173,
+      "flat": false
+    },
+    "readingTable": {
+      "file": "props/readingTable.png",
+      "w": 192,
+      "h": 60,
+      "flat": false
+    },
+    "floorLamp": {
+      "file": "props/floorLamp.png",
+      "w": 51,
+      "h": 123,
+      "flat": false
+    },
+    "whiteboard": {
+      "file": "props/whiteboard.png",
+      "w": 192,
+      "h": 128,
+      "flat": false
+    },
+    "beanbag": {
+      "file": "props/beanbag.png",
+      "w": 80,
+      "h": 70,
+      "flat": false
+    },
+    "meetingTable": {
+      "file": "props/meetingTable.png",
+      "w": 576,
+      "h": 116,
+      "flat": false
+    },
+    "tv": {
+      "file": "props/tv.png",
+      "w": 192,
+      "h": 138,
+      "flat": false
+    },
+    "server": {
+      "file": "props/server.png",
+      "w": 70,
+      "h": 141,
+      "flat": false
+    },
+    "portal": {
+      "file": "props/portal.png",
+      "w": 194,
+      "h": 230,
+      "flat": false
+    },
+    "crystal": {
+      "file": "props/crystal.png",
+      "w": 58,
+      "h": 75,
+      "flat": false
+    },
+    "coffeeBar": {
+      "file": "props/coffeeBar.png",
+      "w": 141,
+      "h": 96,
+      "flat": false
+    },
+    "sofa": {
+      "file": "props/sofa.png",
+      "w": 192,
+      "h": 78,
+      "flat": false
+    },
+    "coffeeTable": {
+      "file": "props/coffeeTable.png",
+      "w": 137,
+      "h": 70,
+      "flat": false
+    },
+    "armchair": {
+      "file": "props/armchair.png",
+      "w": 83,
+      "h": 83,
+      "flat": false
+    },
+    "vending": {
+      "file": "props/vending.png",
+      "w": 70,
+      "h": 110,
+      "flat": false
+    },
+    "tree": {
+      "file": "props/tree.png",
+      "w": 166,
+      "h": 168,
+      "flat": false
+    },
+    "bush": {
+      "file": "props/bush.png",
+      "w": 82,
+      "h": 77,
+      "flat": false
+    },
+    "flowers": {
+      "file": "props/flowers.png",
+      "w": 78,
+      "h": 70,
+      "flat": false
+    }
   }
 }

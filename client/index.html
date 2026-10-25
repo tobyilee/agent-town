@@ -4,28 +4,39 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Agent Town</title>
+  <link rel="preload" href="assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <div class="brand"><span class="logo">🏢</span> Agent Town</div>
-    <div class="status"><span id="conn" class="dot off"></span><span id="conn-label">connecting…</span></div>
-    <button id="open-settings" class="btn">Agents ⚙</button>
+    <div class="status"><span id="conn" class="dot off"></span><span id="conn-label">Connecting…</span></div>
+    <button id="open-settings" class="btn">⚙ Agents</button>
   </header>
   <main>
     <section id="stage">
-      <canvas id="office" width="2176" height="1536"></canvas>
+      <canvas id="office"></canvas>
       <div id="tooltip" hidden></div>
       <div id="empty" hidden>
         <h2>The office is quiet</h2>
         <p>No Claude Code or Codex session has written a log in the last hour.<br>
           Start an agent, or run <code>npm run demo</code> to see the office in action.</p>
       </div>
+      <div class="map-tools">
+        <div class="zoom">
+          <button id="zoom-out" title="Zoom out (−)">−</button>
+          <span id="zoom-level">100%</span>
+          <button id="zoom-in" title="Zoom in (+)">+</button>
+          <button id="zoom-fit" title="Show the whole office (0)">⤢</button>
+        </div>
+        <canvas id="minimap" width="240" height="160" title="Click to jump there"></canvas>
+      </div>
+      <div class="hint">Drag or scroll to move · Pinch or ⌘/Ctrl + scroll to zoom · Click someone to follow them</div>
     </section>
     <aside>
       <div id="detail" class="card" hidden></div>
-      <div class="card">
-        <h3>In the office <span id="count" class="muted"></span></h3>
+      <div class="card roster-card">
+        <h3>In the office <span id="count" class="count"></span></h3>
         <ul id="roster"></ul>
       </div>
       <div class="card legend">

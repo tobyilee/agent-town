@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -8,7 +9,7 @@ import { AGENT_TYPES, configPath, loadConfig, normalize, saveConfig } from './co
 import { startDemo } from './demo.js';
 
 const CLIENT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'client');
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.txt': 'text/plain' };
 
 const demo = process.argv.includes('--demo');
 const cfgFile = configPath();
@@ -57,13 +58,35 @@ function json(res, code, body) {
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let s = '';
-    req.on('data', (c) => { s += c; if (s.length > 1e6) req.destroy(); });
-    req.on('end', () => resolve(s));
+    let tooBig = false;
+    req.on('data', (c) => { if (!tooBig) s += c; if (s.length > 1e6) tooBig = true; });
+    req.on('end', () => (tooBig ? reject(Object.assign(new Error('request body too large'), { status: 413 })) : resolve(s)));
     req.on('error', reject);
   });
 }
 
-const server = http.createServer(async (req, res) => {
+// The server listens on 127.0.0.1 only, but a web page in the browser can still
+// reach it. Two guards keep other sites out:
+// - Host must be a loopback name. A DNS-rebinding page arrives with its own
+//   domain in Host, so it cannot read the office state (prompts, file paths).
+// - A settings change must come from this page itself: no foreign Origin, and a
+//   JSON body, which a cross-site form or simple fetch cannot send without a
+//   CORS preflight that this server never answers.
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+function localHost(req) {
+  const host = req.headers.host || '';
+  const name = host.startsWith('[') ? host.slice(0, host.indexOf(']') + 1) : host.split(':')[0];
+  return LOOPBACK.has(name.toLowerCase());
+}
+
+function sameOrigin(req) {
+  const origin = req.headers.origin;
+  return !origin || origin === `http://${req.headers.host}`;
+}
+
+async function handle(req, res) {
+  if (!localHost(req)) return json(res, 403, { error: 'Agent Town only answers on localhost' });
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname === '/api/state') return json(res, 200, store.snapshot());
   if (url.pathname === '/api/events') {
@@ -78,26 +101,45 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { config: cfg, types: Object.fromEntries(Object.entries(AGENT_TYPES).map(([k, v]) => [k, v.label])), demo, file: cfgFile });
     }
     if (req.method === 'POST') {
+      if (!sameOrigin(req)) return json(res, 403, { error: 'settings can only be changed from the Agent Town page' });
+      if (!/^application\/json\b/i.test(req.headers['content-type'] || '')) return json(res, 415, { error: 'send settings as application/json' });
       try {
         const body = JSON.parse(await readBody(req));
+        if (!body || typeof body !== 'object') throw new Error('settings must be a JSON object');
         cfg = normalize({ ...cfg, agents: body.agents ?? cfg.agents, user: { ...cfg.user, ...(body.user || {}) } });
         store.userName = cfg.user.name;
         saveConfig(cfgFile, cfg);
         await startWatcher();
         return json(res, 200, { config: cfg });
       } catch (e) {
-        return json(res, 400, { error: String(e.message || e) });
+        return json(res, e.status || 400, { error: String(e.message || e) });
       }
     }
+    return json(res, 405, { error: 'use GET or POST' });
   }
 
-  const rel = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
+  let rel;
+  try {
+    rel = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
+  } catch {
+    res.writeHead(400);
+    return res.end('bad request');
+  }
   const file = path.join(CLIENT_DIR, rel);
   if (!file.startsWith(CLIENT_DIR + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); return res.end('not found'); }
     res.writeHead(200, { 'content-type': MIME[path.extname(file)] || 'application/octet-stream' });
     res.end(data);
+  });
+}
+
+// One bad request must never take the server down.
+const server = http.createServer((req, res) => {
+  handle(req, res).catch((e) => {
+    console.error('request failed:', e);
+    if (!res.headersSent) res.writeHead(500);
+    res.end();
   });
 });
 

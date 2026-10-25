@@ -20,15 +20,15 @@ function patchFiles(text) {
 }
 
 export class CodexSession {
-  constructor(store, sessionId) {
+  constructor(store, sessionId, ts = Date.now()) {
     this.store = store;
     this.sessionId = sessionId;
     this.id = `codex:${sessionId}`;
-    store.ensure(this.id, { source: 'codex', sessionId, name: 'Codex' });
+    store.ensure(this.id, { source: 'codex', sessionId, name: 'Codex' }, ts);
   }
 
-  set(activity, detail, ts) {
-    this.store.setActivity(this.id, activity, detail, ts);
+  set(activity, detail, ts, extra) {
+    this.store.setActivity(this.id, activity, detail, ts, extra);
   }
 
   handle(rec) {
@@ -71,7 +71,7 @@ export class CodexSession {
           const files = patchFiles(p.input || args.input || args.raw);
           return this.set('editing', files.length ? `Editing ${files.join(', ')}` : 'Applying a patch', ts);
         }
-        if (['shell', 'exec_command', 'container.exec', 'local_shell', 'shell_command'].includes(name) || p.type === 'local_shell_call') {
+        if (['shell', 'exec', 'exec_command', 'container.exec', 'local_shell', 'shell_command'].includes(name) || p.type === 'local_shell_call') {
           const c = classifyCommand(args.command ?? args.cmd ?? args.action?.command ?? '');
           if (c.activity === 'editing') {
             const files = patchFiles(JSON.stringify(args));
@@ -91,7 +91,7 @@ export class CodexSession {
         return this.set('searching', `Web search: ${short(p.action?.query || '', 60)}`, ts);
       case 'function_call_output':
       case 'custom_tool_call_output':
-        return this.set('thinking', 'Looking at the results', ts);
+        return this.set('thinking', 'Looking at the results', ts, { stay: true });
     }
   }
 

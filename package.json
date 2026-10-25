@@ -1,9 +1,15 @@
 {
   "name": "agent-town",
   "version": "0.1.0",
-  "description": "A Gather.town-style office where your AI coding agents (Claude Code, Codex) work as animated pixel characters.",
+  "description": "A Gather.town / ZEP-style virtual office where your AI coding agents (Claude Code, Codex) work as animated characters.",
   "type": "module",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tobyilee/agent-town.git"
+  },
+  "homepage": "https://github.com/tobyilee/agent-town#readme",
+  "keywords": ["claude-code", "codex", "ai-agents", "virtual-office", "gather-town", "visualization"],
   "bin": {
     "agent-town": "server/index.js"
   },
@@ -13,9 +19,9 @@
   "scripts": {
     "start": "node server/index.js",
     "demo": "node server/index.js --demo",
-    "sprites": "node scripts/gen-placeholder-sprites.js",
-    "sprites:codex": "bash scripts/gen-sprites-codex.sh",
     "test": "node --test test/*.test.js",
+    "sprites:codex": "node scripts/gen-sprites-codex.js",
+    "sprites:fit": "node scripts/gen-sprites-codex.js --fit",
     "sprites:check": "node scripts/check-sprites.js"
   },
   "license": "MIT"

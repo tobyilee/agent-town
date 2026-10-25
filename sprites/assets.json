@@ -1,0 +1,250 @@
+{
+  "style": "cute 2D game art for a cozy virtual office in the style of Gather.town and ZEP: top-down 3/4 camera (seen from the front and slightly above), clean rounded shapes, soft cel shading, thin dark outline, warm friendly palette, no text, no letters, no logos",
+  "background": "Perfectly flat solid magenta #FF00FF background everywhere, no floor, no cast shadow on the background, no border, no grid lines.",
+  "character": {
+    "sheet": "A game character sprite sheet. Chibi proportions: big round head about 40% of the body height, small body. Layout: a strict 4 columns x 4 rows grid of equal square cells, one full-body figure per cell, every figure the same size and scale, feet on the same baseline near the bottom of its cell, nothing crossing cell borders. Row 1: walking toward the viewer (front view), 4 frames of a smooth walk cycle. Row 2: walking to the right (side view, facing right), 4 frames of a walk cycle. Row 3: walking away from the viewer (back view), 4 frames of a walk cycle. Row 4, front view: standing idle; typing with both hands forward (pose A); typing (pose B, hands moved); standing asleep with eyes closed.",
+    "list": [
+      {
+        "file": "char_0",
+        "family": "claude-code",
+        "look": "a young office worker with short wavy brown hair, orange hoodie, dark gray pants, white sneakers, light skin"
+      },
+      {
+        "file": "char_1",
+        "family": "claude-code",
+        "look": "a woman with long black hair in a high ponytail, coral pink cardigan over a white shirt, beige trousers, brown loafers, light tan skin"
+      },
+      {
+        "file": "char_2",
+        "family": "claude-code",
+        "look": "a man with curly ginger hair and round glasses, mustard yellow knit sweater, navy jeans, brown boots, fair freckled skin"
+      },
+      {
+        "file": "char_3",
+        "family": "claude-code",
+        "look": "a woman with a short platinum blonde bob, rose pink bomber jacket over a black t-shirt, light blue jeans, white sneakers, medium brown skin"
+      },
+      {
+        "file": "char_4",
+        "family": "codex",
+        "look": "a man with short spiky black hair, light blue denim jacket over a white t-shirt, black pants, gray sneakers, light skin"
+      },
+      {
+        "file": "char_5",
+        "family": "codex",
+        "look": "a person with a teal beanie and shoulder-length brown hair, teal t-shirt, olive cargo pants, white sneakers, dark brown skin"
+      },
+      {
+        "file": "char_6",
+        "family": "codex",
+        "look": "a woman with lavender hair in a bun, violet blazer over a lilac top, dark purple skirt, black shoes, light skin"
+      },
+      {
+        "file": "char_7",
+        "family": "codex",
+        "look": "a man with short dark curly hair and headphones around his neck, cyan polo shirt, khaki chinos, navy sneakers, deep brown skin"
+      }
+    ]
+  },
+  "fx": {
+    "rows": [
+      "thinking",
+      "talking",
+      "reading",
+      "editing",
+      "searching",
+      "running",
+      "mcp",
+      "subagent",
+      "waiting",
+      "idle"
+    ],
+    "prompt": "A sheet of 10 small status icons for a game UI, bold and readable at small size, chunky shapes with a dark outline. Layout: a strict 5 columns x 2 rows grid of equal square cells, one centered icon per cell, nothing crossing cell borders. Row 1, left to right: a lavender thought cloud with three dots; a white speech bubble with three dots; an open blue book; a yellow pencil; a magnifying glass. Row 2, left to right: a dark terminal window showing a green \">_\" prompt; a glowing teal electric plug with a small lightning bolt; two small people side by side; a steaming coffee mug; the letters \"Zz\" in a soft blue cloud."
+  },
+  "texture": {
+    "prompt": "A seamless tileable floor texture for a cozy 2D virtual office game like Gather.town and ZEP, seen straight from above (no perspective, no horizon), flat even lighting, no shadows, no objects, no text, soft stylized cartoon look with gentle low-contrast detail. The pattern fills the whole square image edge to edge.",
+    "list": {
+      "woodWarm": "warm honey oak wooden floor boards running horizontally, staggered joints",
+      "herringbone": "light oak herringbone parquet floor",
+      "carpetBlue": "soft dusty blue office carpet with a fine woven texture",
+      "carpetGreen": "soft sage green carpet with a fine woven texture",
+      "carpetPurple": "soft lavender carpet with a fine woven texture",
+      "carpetOrange": "soft warm peach carpet with a fine woven texture",
+      "grass": "lush bright cartoon grass lawn with tiny scattered white and yellow flowers",
+      "concrete": "smooth light warm-gray polished concrete floor with very faint speckles"
+    }
+  },
+  "props": {
+    "window": {
+      "size": [
+        1.9,
+        1.8
+      ],
+      "flat": true,
+      "prompt": "a wide office window with a light wood frame, showing blue sky and a white cloud, straight-on front view with no perspective"
+    },
+    "clock": {
+      "size": [
+        0.9,
+        0.9
+      ],
+      "flat": true,
+      "prompt": "a round wall clock with a white face and a mint green rim, straight-on front view"
+    },
+    "painting": {
+      "size": [
+        0.9,
+        1.2
+      ],
+      "flat": true,
+      "prompt": "a small framed painting of a sunny landscape with hills, straight-on front view"
+    },
+    "desk": {
+      "size": [
+        2,
+        1.7
+      ],
+      "prompt": "a wooden office desk, wide object about twice as wide as it is tall. On it: a computer monitor seen from behind (we see the back of the monitor), a keyboard, a small mug. The worker would sit behind it facing the viewer."
+    },
+    "plant": {
+      "size": [
+        1.1,
+        1.9
+      ],
+      "prompt": "a potted monstera plant in a white round pot"
+    },
+    "waterCooler": {
+      "size": [
+        0.9,
+        1.9
+      ],
+      "prompt": "an office water cooler with a blue water bottle on top"
+    },
+    "shelf": {
+      "size": [
+        2,
+        2.7
+      ],
+      "prompt": "a tall wooden bookshelf full of colorful books and a small plant, front view"
+    },
+    "readingTable": {
+      "size": [
+        3,
+        1.5
+      ],
+      "prompt": "a long wooden library reading table, about three times as wide as it is tall, with open books and a green banker's desk lamp"
+    },
+    "floorLamp": {
+      "size": [
+        0.8,
+        2.2
+      ],
+      "prompt": "a tall floor lamp with a warm cream lampshade"
+    },
+    "whiteboard": {
+      "size": [
+        3,
+        2.4
+      ],
+      "prompt": "a wide whiteboard on a stand with wheels, covered with colorful sticky notes, arrows and simple diagrams"
+    },
+    "beanbag": {
+      "size": [
+        1.3,
+        1.1
+      ],
+      "prompt": "a soft purple beanbag chair"
+    },
+    "meetingTable": {
+      "size": [
+        9,
+        2.6
+      ],
+      "prompt": "a very long conference table, extremely wide object about four times wider than it is tall, light wood top, with laptops, notepads and water glasses along it, front 3/4 view"
+    },
+    "tv": {
+      "size": [
+        3,
+        2.3
+      ],
+      "prompt": "a large flat TV screen on a low wooden stand, the screen shows a simple colorful bar chart"
+    },
+    "server": {
+      "size": [
+        1.1,
+        2.4
+      ],
+      "prompt": "a tall dark server rack cabinet with rows of blinking blue and green lights"
+    },
+    "portal": {
+      "size": [
+        3.6,
+        3.6
+      ],
+      "prompt": "a glowing sci-fi portal machine: a round metal ring standing on a circular platform, swirling teal and cyan energy inside the ring"
+    },
+    "crystal": {
+      "size": [
+        0.9,
+        1.4
+      ],
+      "prompt": "a small glowing teal crystal cluster on a stone base"
+    },
+    "coffeeBar": {
+      "size": [
+        2.2,
+        2.3
+      ],
+      "prompt": "a small coffee bar counter with an espresso machine, cups and a jar of cookies"
+    },
+    "sofa": {
+      "size": [
+        3,
+        1.7
+      ],
+      "prompt": "a cozy three-seat sofa in mustard yellow with two cushions, front view, wide object about twice as wide as it is tall"
+    },
+    "coffeeTable": {
+      "size": [
+        2.4,
+        1.1
+      ],
+      "prompt": "a low oval wooden coffee table with a magazine and a cup"
+    },
+    "armchair": {
+      "size": [
+        1.3,
+        1.4
+      ],
+      "prompt": "a cozy teal armchair, front view"
+    },
+    "vending": {
+      "size": [
+        1.1,
+        2.3
+      ],
+      "prompt": "a red snack vending machine with colorful snacks behind the glass"
+    },
+    "tree": {
+      "size": [
+        2.6,
+        3.4
+      ],
+      "prompt": "a round leafy green tree with a short trunk"
+    },
+    "bush": {
+      "size": [
+        2,
+        1.2
+      ],
+      "prompt": "a round green hedge bush with small pink flowers"
+    },
+    "flowers": {
+      "size": [
+        2,
+        1.1
+      ],
+      "prompt": "a small wooden planter box with colorful tulips"
+    }
+  }
+}

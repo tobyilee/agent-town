@@ -78,8 +78,8 @@ export function startDemo() {
     return () => { steps[i % steps.length](); i++; };
   };
 
-  const bots = [claudeBot('web-app'), claudeBot('api-server'), codexBot('mobile')];
-  bots.forEach((b, i) => setTimeout(() => { b(); setInterval(b, 2600 + i * 700); }, i * 1200));
+  const bots = [claudeBot('web-app'), claudeBot('api-server'), codexBot('mobile'), claudeBot('docs-site'), codexBot('infra')];
+  bots.forEach((b, i) => setTimeout(() => { b(); setInterval(b, 2600 + i * 700); }, i * 1700));
 
   return [
     { type: 'claude-code', enabled: true, path: claudeRoot },

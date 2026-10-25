@@ -1,4 +1,6 @@
 node_modules/
 sprites/raw/
+sprites/.venv/
+__pycache__/
 .DS_Store
 *.log

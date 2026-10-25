@@ -91,6 +91,9 @@ export class Watcher {
         try { rec = JSON.parse(line); } catch { continue; }
         this.dispatch(file, f.type, rec);
       }
+      // Right away, before any snapshot goes out: a session whose backfilled
+      // lines are already older than goneAfter never shows up after a restart.
+      this.store.tick();
     } finally {
       await fh.close();
     }
@@ -101,13 +104,13 @@ export class Watcher {
       const { sessionId, subFile } = claudeFileInfo(file);
       const key = `claude-code:${sessionId}`;
       let s = this.sessions.get(key);
-      if (!s || !this.store.get(key)) this.sessions.set(key, (s = new ClaudeSession(this.store, sessionId)));
+      if (!s || !this.store.get(key)) this.sessions.set(key, (s = new ClaudeSession(this.store, sessionId, Date.parse(rec.timestamp) || Date.now())));
       s.handle(rec, subFile);
     } else if (type === 'codex') {
       const sessionId = codexSessionId(file);
       const key = `codex:${sessionId}`;
       let s = this.sessions.get(key);
-      if (!s || !this.store.get(key)) this.sessions.set(key, (s = new CodexSession(this.store, sessionId)));
+      if (!s || !this.store.get(key)) this.sessions.set(key, (s = new CodexSession(this.store, sessionId, Date.parse(rec.timestamp) || Date.now())));
       s.handle(rec);
     }
   }

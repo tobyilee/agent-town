@@ -1,41 +1,60 @@
-import { Office, ACTIVITY_LABEL, SCALE } from './office.js';
+import { Office, ACTIVITY_LABEL, WORLD_W, WORLD_H } from './office.js';
 import { ZONES } from './office-map.js';
 
 const $ = (sel) => document.querySelector(sel);
 const SPRITES = 'assets/sprites/';
 
 function loadImage(src) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`could not load ${src}`));
+    img.onerror = () => { console.warn(`could not load ${src}`); resolve(null); };
     img.src = src;
   });
 }
 
 async function loadSprites() {
-  const m = await (await fetch(SPRITES + 'manifest.json')).json();
-  const [office, fx, ...chars] = await Promise.all([
-    loadImage(SPRITES + m.office.file),
-    loadImage(SPRITES + m.fx.file),
-    ...m.characters.map((c) => loadImage(SPRITES + c.file)),
+  const manifest = await (await fetch(SPRITES + 'manifest.json')).json();
+  const props = Object.entries(manifest.props);
+  const textures = Object.entries(manifest.textures || {});
+  const [fx, chars, propImgs, texImgs] = await Promise.all([
+    loadImage(SPRITES + manifest.fx.file),
+    Promise.all(manifest.character.list.map((c) => loadImage(SPRITES + c.file))),
+    Promise.all(props.map(([, p]) => loadImage(SPRITES + p.file))),
+    Promise.all(textures.map(([, t]) => loadImage(SPRITES + t.file))),
+    document.fonts?.load('700 12px "Pretendard Variable"').catch(() => {}),
   ]);
-  return { frame: m.frame, rows: m.characterRows, characters: m.characters, chars, office, fx, fxRows: m.fx.rows };
+  return {
+    manifest, fx, chars,
+    props: Object.fromEntries(props.map(([name], i) => [name, propImgs[i]])),
+    textures: Object.fromEntries(textures.map(([name], i) => [name, texImgs[i]])),
+  };
 }
 
 const sprites = await loadSprites();
 const canvas = $('#office');
+const stage = $('#stage');
+const minimap = $('#minimap');
 const office = new Office(canvas, sprites);
 let agents = [];
-let serverNow = Date.now();
 let clockSkew = 0;
+
+function fitCanvas() {
+  const r = stage.getBoundingClientRect();
+  office.resize(r.width, r.height, window.devicePixelRatio || 1);
+}
+new ResizeObserver(fitCanvas).observe(stage);
+fitCanvas();
 
 // Render loop
 let last = performance.now();
+let tick = 0;
 function frame(now) {
   office.step(Math.min(0.05, (now - last) / 1000));
   last = now;
   office.render();
+  if (tick++ % 3 === 0) office.renderMinimap(minimap);
+  $('#zoom-level').textContent = `${Math.round(office.cam.zoom * 100)}%`;
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -43,13 +62,12 @@ requestAnimationFrame(frame);
 // Live state from the server
 function connect() {
   const es = new EventSource('api/events');
-  es.onopen = () => { $('#conn').classList.remove('off'); $('#conn-label').textContent = 'live'; };
-  es.onerror = () => { $('#conn').classList.add('off'); $('#conn-label').textContent = 'reconnecting…'; };
+  es.onopen = () => { $('#conn').classList.remove('off'); $('#conn-label').textContent = 'Live'; };
+  es.onerror = () => { $('#conn').classList.add('off'); $('#conn-label').textContent = 'Reconnecting…'; };
   es.onmessage = (e) => {
     const state = JSON.parse(e.data);
     agents = state.agents;
-    serverNow = state.now;
-    clockSkew = Date.now() - serverNow;
+    clockSkew = Date.now() - state.now;
     office.update(agents);
     renderRoster();
     renderDetail();
@@ -59,38 +77,112 @@ function connect() {
 connect();
 setInterval(() => { renderRoster(); renderDetail(); }, 1000);
 
-// Pointer interaction
-function toCanvas(e) {
+// ---- Moving around the office ------------------------------------------------
+
+function local(e) {
   const r = canvas.getBoundingClientRect();
-  return { x: ((e.clientX - r.left) / r.width) * (canvas.width / SCALE), y: ((e.clientY - r.top) / r.height) * (canvas.height / SCALE) };
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
-canvas.addEventListener('mousemove', (e) => {
-  const p = toCanvas(e);
-  const c = office.hit(p.x, p.y);
+
+let drag = null;
+const pointers = new Map(); // for pinch zoom on touch screens
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, local(e));
+  drag = { ...local(e), moved: false };
+});
+canvas.addEventListener('pointermove', (e) => {
+  const p = local(e);
+  if (pointers.size === 2 && pointers.has(e.pointerId)) {
+    const [a, b] = [...pointers.values()];
+    const before = Math.hypot(a.x - b.x, a.y - b.y);
+    pointers.set(e.pointerId, p);
+    const [c, d] = [...pointers.values()];
+    const after = Math.hypot(c.x - d.x, c.y - d.y);
+    if (before > 0) office.zoomAt(after / before, (c.x + d.x) / 2, (c.y + d.y) / 2);
+    if (drag) drag.moved = true;
+    return;
+  }
+  if (drag && (drag.moved || Math.hypot(p.x - drag.x, p.y - drag.y) > 4)) {
+    office.panBy(drag.x - p.x, drag.y - p.y);
+    drag = { ...p, moved: true };
+    canvas.classList.add('dragging');
+    $('#tooltip').hidden = true;
+    return;
+  }
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, p);
+  hover(e, p);
+});
+const endPointer = (e) => {
+  pointers.delete(e.pointerId);
+  if (drag && !drag.moved && e.type === 'pointerup') {
+    const w = office.toWorld(...Object.values(local(e)));
+    const c = office.hit(w.x, w.y);
+    select(c?.id || null, false);
+  }
+  if (!pointers.size) drag = null;
+  canvas.classList.remove('dragging');
+};
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('pointerleave', () => { office.hover = null; $('#tooltip').hidden = true; });
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const p = local(e);
+  const scale = e.deltaMode === 1 ? 16 : 1; // lines -> pixels
+  if (e.ctrlKey || e.metaKey) office.zoomAt(Math.exp(-e.deltaY * scale * 0.01), p.x, p.y);
+  else office.panBy(e.deltaX * scale, e.deltaY * scale);
+}, { passive: false });
+
+window.addEventListener('keydown', (e) => {
+  if (e.target.closest('input, textarea, dialog')) return;
+  const step = 80;
+  const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step], a: [-step, 0], d: [step, 0], w: [0, -step], s: [0, step] };
+  if (moves[e.key]) { office.panBy(...moves[e.key]); e.preventDefault(); }
+  else if (e.key === '+' || e.key === '=') office.zoomAt(1.2);
+  else if (e.key === '-') office.zoomAt(1 / 1.2);
+  else if (e.key === '0') office.fit();
+  else if (e.key === 'Escape') select(null);
+});
+
+$('#zoom-in').onclick = () => office.zoomAt(1.25);
+$('#zoom-out').onclick = () => office.zoomAt(1 / 1.25);
+$('#zoom-fit').onclick = () => office.fit();
+
+// Click or drag on the minimap to jump there.
+function jump(e) {
+  const r = minimap.getBoundingClientRect();
+  office.following = null;
+  office.centerOn(((e.clientX - r.left) / r.width) * WORLD_W, ((e.clientY - r.top) / r.height) * WORLD_H, e.type === 'pointerdown');
+}
+minimap.addEventListener('pointerdown', (e) => { minimap.setPointerCapture(e.pointerId); jump(e); });
+minimap.addEventListener('pointermove', (e) => { if (e.buttons) jump(e); });
+
+function hover(e, p) {
+  const w = office.toWorld(p.x, p.y);
+  const c = office.hit(w.x, w.y);
   office.hover = c?.id || null;
   canvas.classList.toggle('hovering', !!c);
   const tip = $('#tooltip');
   if (!c) { tip.hidden = true; return; }
   const a = c.agent;
-  tip.innerHTML = `<b>${esc(a.name)}${a.project ? ' · ' + esc(a.project) : ''}</b>${esc(ACTIVITY_LABEL[a.activity] || a.activity)}: ${esc(a.detail)}`;
-  const sr = $('#stage').getBoundingClientRect();
-  tip.style.left = `${Math.min(e.clientX - sr.left + 14, sr.width - 290)}px`;
-  tip.style.top = `${e.clientY - sr.top + 14}px`;
+  tip.innerHTML = `<b>${esc(a.name)}${a.project ? ' · ' + esc(a.project) : ''}</b><span class="act ${a.activity}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</span>${esc(a.detail)}`;
+  tip.style.left = `${Math.min(p.x + 16, stage.clientWidth - 300)}px`;
+  tip.style.top = `${p.y + 16}px`;
   tip.hidden = false;
-});
-canvas.addEventListener('mouseleave', () => { office.hover = null; $('#tooltip').hidden = true; });
-canvas.addEventListener('click', (e) => {
-  const p = toCanvas(e);
-  select(office.hit(p.x, p.y)?.id || null);
-});
+}
 
-function select(id) {
+function select(id, follow = true) {
   office.selected = id;
+  if (id && follow) office.follow(id);
+  else if (!id) office.following = null;
   renderRoster();
   renderDetail();
 }
 
-// Side panel
+// ---- Side panel ---------------------------------------------------------------
+
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -106,11 +198,27 @@ function sourceBadge(a) {
   return `<span class="badge ${a.source === 'codex' ? 'codex' : ''}">${a.source === 'codex' ? 'Codex' : 'Claude Code'}</span>`;
 }
 
+const avatars = new Map(); // sprite index -> data URL
+function avatar(a, cls = '') {
+  const c = office.chars.get(a.id);
+  if (!c) return `<span class="avatar ${cls}"></span>`;
+  if (!avatars.has(c.sprite)) {
+    const m = sprites.manifest.character;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 72;
+    const ctx = cv.getContext('2d');
+    // Head and shoulders of the idle frame.
+    ctx.drawImage(sprites.chars[c.sprite], 20, m.rows.indexOf('idle_down') * m.frame + 2, 88, 88, 0, 0, 72, 72);
+    avatars.set(c.sprite, cv.toDataURL());
+  }
+  return `<img class="avatar ${cls}" src="${avatars.get(c.sprite)}" alt="">`;
+}
+
 function renderRoster() {
   // Busy agents first, then the ones waiting on you, then idle; newest first within each.
   const rank = (a) => (a.activity === 'idle' ? 2 : a.activity === 'waiting' ? 1 : 0);
   const mains = agents.filter((a) => a.kind !== 'subagent').sort((a, b) => rank(a) - rank(b) || b.lastEventAt - a.lastEventAt);
-  $('#count').textContent = mains.length ? `(${mains.length})` : '';
+  $('#count').textContent = mains.length ? mains.length : '';
   const items = [];
   for (const a of mains) {
     items.push(rosterItem(a, false));
@@ -122,19 +230,10 @@ function renderRoster() {
 
 function rosterItem(a, sub) {
   return `<li data-id="${esc(a.id)}" class="${sub ? 'sub' : ''} ${office.selected === a.id ? 'sel' : ''}">
-    <span class="who"><span class="name">${sub ? '↳ ' : ''}${esc(a.name)}${!sub && a.project ? ` · ${esc(a.project)}` : ''}</span>
-      ${!sub && a.title ? `<span class="title">${esc(a.title)}</span>` : ''}</span>
+    ${avatar(a)}
+    <span class="who"><span class="name">${sub ? '↳ ' : ''}${esc(a.name)}${!sub && a.project ? ` <span class="proj">· ${esc(a.project)}</span>` : ''}</span>
+      <span class="title">${esc(!sub && a.title ? a.title : a.detail)}</span></span>
     <span class="act ${a.activity}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}${a.activity === 'waiting' || a.activity === 'idle' ? ` · ${ago(a.since)}` : ''}</span></li>`;
-}
-
-function avatar(a) {
-  const c = office.chars.get(a.id);
-  if (!c) return '';
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = sprites.frame;
-  const ctx = cv.getContext('2d');
-  ctx.drawImage(sprites.chars[c.sprite], 0, sprites.rows.indexOf('idle_down') * sprites.frame, sprites.frame, sprites.frame, 0, 0, sprites.frame, sprites.frame);
-  return `<img src="${cv.toDataURL()}" alt="">`;
 }
 
 function renderDetail() {
@@ -145,11 +244,11 @@ function renderDetail() {
   const parent = a.parentId && agents.find((x) => x.id === a.parentId);
   const subs = agents.filter((x) => x.parentId === a.id);
   el.innerHTML = `
-    <div class="top">${avatar(a)}<div><h2>${esc(a.name)}</h2>${sourceBadge(a)} ${a.kind === 'subagent' ? '<span class="muted small">subagent</span>' : ''}</div>
-      <button class="close" title="Close">×</button></div>
-    ${a.title ? `<div class="small muted">${esc(a.title)}</div>` : ''}
+    <div class="top">${avatar(a, 'big')}<div class="id"><h2>${esc(a.name)}</h2><div>${sourceBadge(a)} ${a.kind === 'subagent' ? '<span class="muted small">subagent</span>' : ''}</div></div>
+      <button class="close" title="Close (Esc)">×</button></div>
+    ${a.title ? `<div class="task">${esc(a.title)}</div>` : ''}
     <div class="now"><div class="label">Right now · for ${ago(a.since)}</div>
-      <div class="what">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</div>
+      <div class="what act ${a.activity}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</div>
       <div class="why">${esc(a.detail)}</div></div>
     <dl>
       ${a.project ? `<dt>Project</dt><dd>${esc(a.project)}</dd>` : ''}
@@ -162,13 +261,15 @@ function renderDetail() {
       <dt>Last seen</dt><dd>${ago(a.lastEventAt)} ago</dd>
     </dl>
     <h3>Recent</h3>
-    <ol>${a.history.map((h) => `<li><span class="t">${ago(h.t)} ago</span><span>${esc(h.detail)}</span></li>`).join('')}</ol>`;
+    <ol>${a.history.map((h) => `<li><span class="t">${ago(h.t)}</span><span>${esc(h.detail)}</span></li>`).join('')}</ol>`;
   el.querySelector('.close').onclick = () => select(null);
 }
 
-$('#legend').innerHTML = ZONES.map((z) => `<li><b>${esc(z.label)}</b>${z.activities.map((x) => esc(ACTIVITY_LABEL[x])).join(', ')}</li>`).join('');
+$('#legend').innerHTML = ZONES.filter((z) => z.activities.length)
+  .map((z) => `<li><b>${esc(z.label)}</b><span>${z.activities.map((x) => esc(ACTIVITY_LABEL[x])).join(', ')}</span></li>`).join('');
 
-// Settings: which agents to watch
+// ---- Settings: which agents to watch -------------------------------------------
+
 const dialog = $('#settings');
 $('#open-settings').onclick = async () => {
   const { config, types, demo, file } = await (await fetch('api/config')).json();

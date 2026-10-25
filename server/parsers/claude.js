@@ -18,7 +18,7 @@ export function claudeFileInfo(path) {
 const TALK_DWELL_MS = 4000;
 
 export class ClaudeSession {
-  constructor(store, sessionId) {
+  constructor(store, sessionId, ts = Date.now()) {
     this.store = store;
     this.sessionId = sessionId;
     this.id = `claude-code:${sessionId}`;
@@ -27,7 +27,7 @@ export class ClaudeSession {
     this.unlinked = [];             // spawned subagents with no log file yet
     this.subByFile = new Map();     // subagent file -> subagent id
     this.talkTimer = null;
-    store.ensure(this.id, { source: 'claude-code', sessionId, name: 'Claude' });
+    store.ensure(this.id, { source: 'claude-code', sessionId, name: 'Claude' }, ts);
   }
 
   handle(rec, subFile = null) {
@@ -97,7 +97,7 @@ export class ClaudeSession {
     }
     if (sawResult) {
       if (this.store.activeSubagents(this.id).length) this.delegating(ts);
-      else this.store.setActivity(this.id, 'thinking', 'Looking at the results', ts);
+      else this.store.setActivity(this.id, 'thinking', 'Looking at the results', ts, { stay: true });
     }
   }
 
@@ -143,7 +143,7 @@ export class ClaudeSession {
     }
     if (rec.type === 'assistant') this.handleAssistant(subId, rec, ts, false);
     else if (rec.type === 'user' && Array.isArray(rec.message?.content) && rec.message.content.some((c) => c.type === 'tool_result')) {
-      this.store.setActivity(subId, 'thinking', 'Looking at the results', ts);
+      this.store.setActivity(subId, 'thinking', 'Looking at the results', ts, { stay: true });
     }
   }
 }

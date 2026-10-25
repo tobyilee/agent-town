@@ -7,7 +7,7 @@ const HISTORY_LIMIT = 40;
 // activity it is doing right now. Agents carry a userId so a later multi-user
 // office can merge stores from several developers.
 export class Store extends EventEmitter {
-  constructor({ userId = 'local', userName = 'me', idleAfterMs = 90_000, restAfterMs = 10 * 60_000, goneAfterMs = 30 * 60_000 } = {}) {
+  constructor({ userId = 'local', userName = 'me', idleAfterMs = 90_000, restAfterMs = 10 * 60_000, goneAfterMs = 20 * 60_000 } = {}) {
     super();
     this.userId = userId;
     this.userName = userName;
@@ -51,11 +51,14 @@ export class Store extends EventEmitter {
     return a;
   }
 
-  setActivity(id, activity, detail, ts = Date.now(), extra = {}) {
+  // extra.stay: the agent is only reviewing what it just did (a tool result), so
+  // the office keeps its character where it is instead of walking off.
+  setActivity(id, activity, detail, ts = Date.now(), { stay = false, ...extra } = {}) {
     const a = this.agents.get(id);
     if (!a) return;
     ts = Math.max(ts, a.lastEventAt - 1); // tolerate slightly out-of-order lines
     const d = short(detail, 160);
+    a.stay = stay;
     if (a.activity !== activity || a.detail !== d) {
       if (a.activity !== activity) a.since = ts;
       a.activity = activity;

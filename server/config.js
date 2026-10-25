@@ -15,7 +15,7 @@ export function defaultConfig() {
     activeWindowMinutes: 60,
     idleAfterSeconds: 90,
     restAfterMinutes: 10,
-    goneAfterMinutes: 30,
+    goneAfterMinutes: 20,
   };
 }
 

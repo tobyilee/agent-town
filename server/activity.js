@@ -61,8 +61,35 @@ export function classifyTool(name, input = {}) {
     case 'TodoWrite':
     case 'TaskCreate':
     case 'TaskUpdate':
-    case 'ExitPlanMode':
       return { activity: 'thinking', detail: 'Planning next steps', tool: n };
+    case 'ToolSearch':
+      return { activity: 'thinking', detail: 'Looking up tools', tool: n };
+    case 'Skill':
+      return { activity: 'reading', detail: `Reading the ${short(input.skill || input.name || 'skill', 40)} skill`, tool: n };
+    case 'LSP':
+      return { activity: 'searching', detail: 'Looking up code symbols', tool: n };
+    case 'ReadNotifications':
+    case 'FetchInboxMessage':
+      return { activity: 'reading', detail: 'Reading notifications', tool: n };
+    case 'AskUserQuestion':
+      return { activity: 'waiting', detail: 'Asking you a question', tool: n };
+    case 'ExitPlanMode':
+      return { activity: 'waiting', detail: 'Waiting for you to approve the plan', tool: n };
+    case 'SendMessage':
+    case 'SendUserFile':
+    case 'StructuredOutput':
+    case 'SubagentHandback':
+      return { activity: 'talking', detail: n === 'SendUserFile' ? 'Sending you a file' : 'Reporting back', tool: n };
+    case 'Artifact':
+      return { activity: 'editing', detail: 'Publishing an artifact', tool: n };
+    case 'EnterWorktree':
+    case 'ExitWorktree':
+      return { activity: 'running', detail: n === 'EnterWorktree' ? 'Setting up a worktree' : 'Leaving the worktree', tool: n };
+    case 'Monitor':
+    case 'TaskStop':
+      return { activity: 'running', detail: n === 'Monitor' ? 'Watching a background task' : 'Stopping a background task', tool: n };
+    case 'ScheduleWakeup':
+      return { activity: 'waiting', detail: 'Sleeping until the next check', tool: n };
     default:
       return { activity: 'running', detail: `Using ${n}`, tool: n };
   }

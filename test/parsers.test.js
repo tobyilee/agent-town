@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Store } from '../server/store.js';
 import { ClaudeSession, claudeFileInfo } from '../server/parsers/claude.js';
 import { CodexSession, codexSessionId } from '../server/parsers/codex.js';
-import { classifyCommand } from '../server/activity.js';
+import { classifyCommand, classifyTool } from '../server/activity.js';
 
 const ts = (s) => new Date(Date.UTC(2026, 9, 25, 6, 0, s)).toISOString();
 
@@ -74,6 +74,64 @@ test('codex: rollout lines become activities', () => {
   assert.equal(a.detail, 'Editing login.spec.ts');
   s.handle({ timestamp: ts(5), type: 'event_msg', payload: { type: 'task_complete' } });
   assert.equal(a.activity, 'waiting');
+});
+
+test('claude: reviewing a tool result keeps the agent in place', () => {
+  const store = new Store();
+  const s = new ClaudeSession(store, 'stay');
+  const a = store.get('claude-code:stay');
+  s.handle({ type: 'assistant', timestamp: ts(1), message: { content: [{ type: 'tool_use', id: 'b1', name: 'Bash', input: { command: 'npm test' } }] } });
+  assert.equal(a.stay, false);
+  s.handle({ type: 'user', timestamp: ts(2), message: { content: [{ type: 'tool_result', tool_use_id: 'b1', content: 'ok' }] } });
+  assert.equal(a.activity, 'thinking');
+  assert.equal(a.stay, true);
+  s.handle({ type: 'assistant', timestamp: ts(3), message: { content: [{ type: 'thinking', thinking: 'next' }] } });
+  assert.equal(a.stay, false);
+});
+
+test('tools land in the activity that matches what the agent does', () => {
+  const cases = {
+    AskUserQuestion: 'waiting', ExitPlanMode: 'waiting', ToolSearch: 'thinking', Skill: 'reading', LSP: 'searching',
+    SendMessage: 'talking', StructuredOutput: 'talking', Artifact: 'editing', EnterWorktree: 'running', Monitor: 'running',
+  };
+  for (const [tool, activity] of Object.entries(cases)) assert.equal(classifyTool(tool, {}).activity, activity, tool);
+});
+
+test('codex: exec calls are shell commands', () => {
+  const store = new Store();
+  const s = new CodexSession(store, 'x');
+  s.handle({ timestamp: ts(1), type: 'response_item', payload: { type: 'function_call', name: 'exec', arguments: JSON.stringify({ cmd: 'rg -n foo' }) } });
+  assert.equal(store.get('codex:x').activity, 'searching');
+  s.handle({ timestamp: ts(2), type: 'response_item', payload: { type: 'function_call_output', output: 'x' } });
+  assert.equal(store.get('codex:x').stay, true);
+});
+
+test('restart: replayed sessions keep their real age', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const { Watcher } = await import('../server/watcher.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-town-test-'));
+  const line = (min, sid) => JSON.stringify({
+    type: 'assistant', timestamp: new Date(Date.now() - min * 60_000).toISOString(), sessionId: sid,
+    message: { content: [{ type: 'tool_use', id: 't', name: 'Read', input: { file_path: '/a/b.ts' } }] },
+  }) + '\n';
+  fs.mkdirSync(path.join(dir, 'p'));
+  fs.writeFileSync(path.join(dir, 'p', 'old.jsonl'), line(25, 'old'));   // quiet for 25 min
+  fs.writeFileSync(path.join(dir, 'p', 'recent.jsonl'), line(12, 'recent')); // quiet for 12 min
+  const store = new Store({ goneAfterMs: 20 * 60_000 });
+  const w =new Watcher(store, { sources: [{ type: 'claude-code', path: dir }] });
+  await w.scan();
+  await w.poll();
+  try {
+    assert.equal(store.get('claude-code:old'), undefined, 'a session older than goneAfter must not come back');
+    const a = store.get('claude-code:recent');
+    assert.ok(a, 'a recent session is shown');
+    assert.ok(Date.now() - a.lastEventAt > 11 * 60_000, 'its last activity keeps the log time, not the restart time');
+    assert.equal(a.activity, 'idle', 'quiet for 12 minutes mid-turn means idle');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('shell commands are classified', () => {
