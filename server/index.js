@@ -21,6 +21,7 @@ const store = new Store({
   userId: cfg.user.id,
   userName: cfg.user.name,
   idleAfterMs: cfg.idleAfterSeconds * 1000,
+  restAfterMs: cfg.restAfterMinutes * 60_000,
   goneAfterMs: cfg.goneAfterMinutes * 60_000,
 });
 

@@ -29,8 +29,8 @@ Needs Node 18 or newer. There are no npm dependencies to install.
 | Running a command | Server Room    | `Bash` and Codex shell calls                                 |
 | Calling MCP       | MCP Portal     | any `mcp__server__tool` call, Codex `mcp_tool_call_begin`    |
 | Delegating        | Meeting Room   | `Task`/`Agent`; each subagent gets its own small character   |
-| Waiting for you   | Lounge         | the turn ended                                               |
-| Idle              | Lounge (asleep)| no log activity for 90 seconds                               |
+| Waiting for you   | Lounge         | the agent finished its turn (Claude Code `end_turn`, Codex `task_complete`) and is waiting for your next message |
+| Idle              | Lounge (asleep)| nobody replied for 10 minutes after a finished turn, or no log activity for 90 seconds mid-turn |
 
 Sessions that have been quiet for 30 minutes leave the office.
 
@@ -46,7 +46,7 @@ set your display name. Settings are saved to `~/.agent-town/config.json`
 | Codex CLI   | `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl` (default `~/.codex/sessions`) |
 
 Other options in the config file: `port`, `activeWindowMinutes` (how old a log can be
-and still be picked up at start), `idleAfterSeconds`, `goneAfterMinutes`.
+and still be picked up at start), `idleAfterSeconds`, `restAfterMinutes`, `goneAfterMinutes`.
 
 ## Sprites
 

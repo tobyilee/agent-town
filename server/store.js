@@ -7,11 +7,12 @@ const HISTORY_LIMIT = 40;
 // activity it is doing right now. Agents carry a userId so a later multi-user
 // office can merge stores from several developers.
 export class Store extends EventEmitter {
-  constructor({ userId = 'local', userName = 'me', idleAfterMs = 90_000, goneAfterMs = 30 * 60_000 } = {}) {
+  constructor({ userId = 'local', userName = 'me', idleAfterMs = 90_000, restAfterMs = 10 * 60_000, goneAfterMs = 30 * 60_000 } = {}) {
     super();
     this.userId = userId;
     this.userName = userName;
     this.idleAfterMs = idleAfterMs;
+    this.restAfterMs = restAfterMs;
     this.goneAfterMs = goneAfterMs;
     this.agents = new Map();
   }
@@ -102,7 +103,8 @@ export class Store extends EventEmitter {
     return (this.agents.get(parentId)?.subagents || []).filter((id) => this.agents.has(id));
   }
 
-  // Marks quiet agents idle and drops sessions that have been silent too long.
+  // Quiet agents go idle: mid-turn silence after idleAfterMs, a finished turn
+  // ("waiting for you") after restAfterMs. Sessions silent for goneAfterMs leave.
   tick(now = Date.now()) {
     for (const a of [...this.agents.values()]) {
       const quiet = now - a.lastEventAt;
@@ -113,9 +115,11 @@ export class Store extends EventEmitter {
           this.agents.delete(a.id);
           this.changed();
         }
-      } else if (quiet > this.idleAfterMs && a.activity !== 'idle' && a.activity !== 'waiting' && a.subagents.length === 0) {
+      } else if (a.activity !== 'idle' && a.subagents.length === 0) {
+        const waiting = a.activity === 'waiting';
+        if (quiet <= (waiting ? this.restAfterMs : this.idleAfterMs)) continue;
         const before = a.lastEventAt;
-        this.setActivity(a.id, 'idle', 'Taking a break', now);
+        this.setActivity(a.id, 'idle', waiting ? 'Finished a while ago, nobody has replied' : 'No log activity for a while', before);
         a.lastEventAt = before;
       }
     }

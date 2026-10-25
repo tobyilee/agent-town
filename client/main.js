@@ -57,7 +57,7 @@ function connect() {
   };
 }
 connect();
-setInterval(renderDetail, 1000);
+setInterval(() => { renderRoster(); renderDetail(); }, 1000);
 
 // Pointer interaction
 function toCanvas(e) {
@@ -107,7 +107,9 @@ function sourceBadge(a) {
 }
 
 function renderRoster() {
-  const mains = agents.filter((a) => a.kind !== 'subagent');
+  // Busy agents first, then the ones waiting on you, then idle; newest first within each.
+  const rank = (a) => (a.activity === 'idle' ? 2 : a.activity === 'waiting' ? 1 : 0);
+  const mains = agents.filter((a) => a.kind !== 'subagent').sort((a, b) => rank(a) - rank(b) || b.lastEventAt - a.lastEventAt);
   $('#count').textContent = mains.length ? `(${mains.length})` : '';
   const items = [];
   for (const a of mains) {
@@ -120,8 +122,9 @@ function renderRoster() {
 
 function rosterItem(a, sub) {
   return `<li data-id="${esc(a.id)}" class="${sub ? 'sub' : ''} ${office.selected === a.id ? 'sel' : ''}">
-    <span class="name">${sub ? '↳ ' : ''}${esc(a.name)}${!sub && a.project ? ` · ${esc(a.project)}` : ''}</span>
-    <span class="act">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</span></li>`;
+    <span class="who"><span class="name">${sub ? '↳ ' : ''}${esc(a.name)}${!sub && a.project ? ` · ${esc(a.project)}` : ''}</span>
+      ${!sub && a.title ? `<span class="title">${esc(a.title)}</span>` : ''}</span>
+    <span class="act ${a.activity}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}${a.activity === 'waiting' || a.activity === 'idle' ? ` · ${ago(a.since)}` : ''}</span></li>`;
 }
 
 function avatar(a) {

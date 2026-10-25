@@ -92,3 +92,14 @@ test('store: quiet agents go idle, then leave', () => {
   store.tick(6000);
   assert.equal(store.get('a'), undefined);
 });
+
+test('store: a finished turn waits for the user, then rests', () => {
+  const store = new Store({ idleAfterMs: 1000, restAfterMs: 3000, goneAfterMs: 10_000 });
+  store.ensure('a', {}, 0);
+  store.setActivity('a', 'waiting', 'Done', 0);
+  store.tick(2000);
+  assert.equal(store.get('a').activity, 'waiting');
+  store.tick(4000);
+  assert.equal(store.get('a').activity, 'idle');
+  assert.equal(store.get('a').since, 0);
+});

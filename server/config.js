@@ -14,6 +14,7 @@ export function defaultConfig() {
     agents: Object.entries(AGENT_TYPES).map(([type, t]) => ({ type, enabled: true, path: t.defaultPath() })),
     activeWindowMinutes: 60,
     idleAfterSeconds: 90,
+    restAfterMinutes: 10,
     goneAfterMinutes: 30,
   };
 }
