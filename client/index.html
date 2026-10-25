@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Town</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="logo">🏢</span> Agent Town</div>
+    <div class="status"><span id="conn" class="dot off"></span><span id="conn-label">connecting…</span></div>
+    <button id="open-settings" class="btn">Agents ⚙</button>
+  </header>
+  <main>
+    <section id="stage">
+      <canvas id="office" width="2176" height="1536"></canvas>
+      <div id="tooltip" hidden></div>
+      <div id="empty" hidden>
+        <h2>The office is quiet</h2>
+        <p>No Claude Code or Codex session has written a log in the last hour.<br>
+          Start an agent, or run <code>npm run demo</code> to see the office in action.</p>
+      </div>
+    </section>
+    <aside>
+      <div id="detail" class="card" hidden></div>
+      <div class="card">
+        <h3>In the office <span id="count" class="muted"></span></h3>
+        <ul id="roster"></ul>
+      </div>
+      <div class="card legend">
+        <h3>Where to find them</h3>
+        <ul id="legend"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="settings">
+    <form method="dialog" id="settings-form">
+      <h2>Agents to watch</h2>
+      <p class="muted">Agent Town reads each agent's session logs from these folders.</p>
+      <div id="agent-list"></div>
+      <label class="field">Your name in the office <input id="user-name" type="text"></label>
+      <p id="settings-note" class="muted small"></p>
+      <div class="actions">
+        <button value="cancel" class="btn ghost">Cancel</button>
+        <button id="save-settings" value="save" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

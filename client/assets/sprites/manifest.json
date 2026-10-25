@@ -1,0 +1,71 @@
+{
+  "generator": "placeholder",
+  "frame": 32,
+  "framesPerRow": 4,
+  "characterRows": [
+    "walk_down",
+    "walk_left",
+    "walk_right",
+    "walk_up",
+    "work_down",
+    "work_up",
+    "idle_down"
+  ],
+  "characters": [
+    {
+      "file": "char_0.png",
+      "family": "claude-code"
+    },
+    {
+      "file": "char_1.png",
+      "family": "claude-code"
+    },
+    {
+      "file": "char_2.png",
+      "family": "claude-code"
+    },
+    {
+      "file": "char_3.png",
+      "family": "claude-code"
+    },
+    {
+      "file": "char_4.png",
+      "family": "codex"
+    },
+    {
+      "file": "char_5.png",
+      "family": "codex"
+    },
+    {
+      "file": "char_6.png",
+      "family": "codex"
+    },
+    {
+      "file": "char_7.png",
+      "family": "codex"
+    }
+  ],
+  "fx": {
+    "file": "fx.png",
+    "size": 16,
+    "frames": 2,
+    "rows": [
+      "thinking",
+      "talking",
+      "reading",
+      "editing",
+      "searching",
+      "running",
+      "mcp",
+      "subagent",
+      "waiting",
+      "idle"
+    ]
+  },
+  "office": {
+    "file": "office.png",
+    "tile": 32,
+    "cols": 34,
+    "rows": 24
+  }
+}
