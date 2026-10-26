@@ -9,9 +9,17 @@
     "url": "git+https://github.com/tobyilee/agent-town.git"
   },
   "homepage": "https://github.com/tobyilee/agent-town#readme",
-  "keywords": ["claude-code", "codex", "ai-agents", "virtual-office", "gather-town", "visualization"],
+  "keywords": [
+    "claude-code",
+    "codex",
+    "ai-agents",
+    "virtual-office",
+    "gather-town",
+    "visualization"
+  ],
   "bin": {
-    "agent-town": "server/index.js"
+    "agent-town": "server/index.js",
+    "agent-town-client": "sync/index.js"
   },
   "engines": {
     "node": ">=18"
@@ -19,6 +27,10 @@
   "scripts": {
     "start": "node server/index.js",
     "demo": "node server/index.js --demo",
+    "client": "node sync/index.js",
+    "client:demo": "node sync/index.js --demo",
+    "cloud:dev": "npm --prefix cloud run dev",
+    "cloud:deploy": "npm --prefix cloud run deploy",
     "test": "node --test test/*.test.js",
     "sprites:codex": "node scripts/gen-sprites-codex.js",
     "sprites:fit": "node scripts/gen-sprites-codex.js --fit",

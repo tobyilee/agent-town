@@ -1,0 +1,71 @@
+:root {
+  --bg: #1e1b2e;
+  --panel: #2a2640;
+  --panel-2: #36314f;
+  --line: #3f3a5c;
+  --text: #f6f4ff;
+  --muted: #aaa3c8;
+  --accent: #7c6cf0;
+  --claude: #e8875a;
+  --codex: #2fb38c;
+  --warn: #f5c542;
+  --bad: #e0605a;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; }
+.brand { font-weight: 800; font-size: 18px; }
+.status { margin-left: auto; display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--muted); min-width: 0; }
+#status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--codex); box-shadow: 0 0 0 3px rgba(47, 179, 140, .2); }
+.dot.off { background: var(--bad); box-shadow: 0 0 0 3px rgba(224, 96, 90, .2); }
+.dot.idle { background: var(--muted); box-shadow: none; }
+
+main { max-width: 760px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--panel); border-radius: 14px; padding: 16px 18px; }
+h2 { margin: 0 0 6px; font-size: 16px; }
+p { margin: 4px 0 10px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.count { color: var(--muted); font-weight: 600; }
+
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; margin-top: 12px; }
+input[type=text], input[type=url], input[type=password] { width: 100%; font: inherit; font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.row { display: flex; gap: 8px; align-items: center; }
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 14px; }
+.actions .muted { margin-right: auto; }
+.btn { font: inherit; font-weight: 700; font-size: 13px; border: 0; border-radius: 10px; padding: 8px 13px; background: var(--panel-2); color: var(--text); cursor: pointer; white-space: nowrap; }
+.btn:hover { filter: brightness(1.1); }
+.btn.primary { background: var(--accent); }
+.btn.ghost { background: transparent; color: var(--muted); }
+.btn.small { font-size: 12px; padding: 5px 10px; }
+
+ul { list-style: none; margin: 0; padding: 0; }
+#sessions li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+#sessions li:first-child { border-top: 0; }
+#sessions li.blocked .who { opacity: .55; }
+#sessions .who { min-width: 0; }
+#sessions .name { font-weight: 700; }
+#sessions .title, #sessions .cwd { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#sessions .side { display: flex; gap: 6px; align-items: center; }
+#sessions .empty, #folders .empty { color: var(--muted); padding: 6px 0; border: 0; display: block; }
+.badge { font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; color: #fff; background: var(--claude); margin-right: 4px; }
+.badge.codex { background: var(--codex); }
+.why { font-size: 12px; font-weight: 700; color: var(--warn); }
+
+.toggle { font: inherit; font-size: 12px; font-weight: 800; border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; background: rgba(47, 179, 140, .2); color: #7fe0c0; }
+.toggle.off { background: rgba(224, 96, 90, .18); color: #ff9c96; }
+
+#folders li { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+#folders li span { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+#add-folder { margin-top: 8px; }
+
+@media (max-width: 560px) {
+  #sessions li { grid-template-columns: 1fr; }
+  .status { font-size: 12px; }
+}
