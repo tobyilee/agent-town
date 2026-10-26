@@ -73,7 +73,7 @@ function save(next) {
   cfg = normalizeClient(next);
   store.userName = cfg.user.name;
   saveClientConfig(cfgFile, cfg);
-  pusher.changed();
+  pusher.changed(true);
 }
 
 async function handle(req, res) {

@@ -3,6 +3,8 @@
 // Cloudflare APIs, so node --test covers it; worker.js keeps it in a Durable
 // Object and stores each person's entry under `user:<id>`.
 
+import { ZONES } from '../client/office-map.js';
+
 export const STALE_MS = 60_000; // a person with no push for this long leaves
 export const MAX_AGENTS = 200;  // per person
 const HISTORY_LIMIT = 15;
@@ -13,27 +15,43 @@ function bad(message) {
   return Object.assign(new Error(message), { status: 400 });
 }
 
-const str = (v, max = 400) => (typeof v === 'string' ? v.slice(0, max) : '');
-const num = (v, shift) => (Number.isFinite(v) ? v + shift : undefined);
+// The rooms of the office decide which activities exist.
+const ACTIVITIES = new Set(ZONES.flatMap((z) => z.activities));
+const SOURCES = new Set(['claude-code', 'codex']);
 
-// Ids get the person's id in front, so the same session id from two laptops
-// never collides, and subagents still find their parent.
-function normalize(a, userId, userName, shift) {
+const str = (v, max = 400) => (typeof v === 'string' ? v.slice(0, max) : '');
+const num = (v, shift, fallback) => (Number.isFinite(v) ? v + shift : fallback);
+const activity = (v) => (ACTIVITIES.has(v) ? v : 'idle');
+
+// Anyone with the team key can push, and every viewer draws what they push, so
+// only known fields of known types get through. Ids get the person's id in
+// front, so the same session id from two laptops never collides, and
+// subagents still find their parent.
+function normalize(a, userId, userName, shift, now) {
   if (!a || typeof a !== 'object' || typeof a.id !== 'string' || !a.id) throw bad('every agent needs a string id');
-  const pre = (id) => `${userId}:${id}`;
+  const pre = (id) => `${userId}:${str(id, 200)}`;
   return {
-    ...a,
     id: pre(a.id),
-    parentId: typeof a.parentId === 'string' ? pre(a.parentId) : null,
-    subagents: Array.isArray(a.subagents) ? a.subagents.filter((s) => typeof s === 'string').map(pre) : [],
     userId,
     userName,
+    kind: a.kind === 'subagent' ? 'subagent' : 'main',
+    parentId: typeof a.parentId === 'string' ? pre(a.parentId) : null,
+    source: SOURCES.has(a.source) ? a.source : 'claude-code',
+    sessionId: str(a.sessionId, 200) || str(a.id, 200),
     name: str(a.name, 80) || 'agent',
-    detail: str(a.detail),
+    project: str(a.project, 120),
+    cwd: str(a.cwd),
+    branch: str(a.branch, 200),
+    model: str(a.model, 120),
     title: str(a.title, 200),
-    since: num(a.since, shift),
-    lastEventAt: num(a.lastEventAt, shift),
-    history: (Array.isArray(a.history) ? a.history : []).slice(0, HISTORY_LIMIT).map((h) => ({ ...h, t: num(h?.t, shift), detail: str(h?.detail) })),
+    activity: activity(a.activity),
+    detail: str(a.detail),
+    stay: a.stay === true,
+    since: num(a.since, shift, now),
+    lastEventAt: num(a.lastEventAt, shift, now),
+    history: (Array.isArray(a.history) ? a.history : []).slice(0, HISTORY_LIMIT)
+      .map((h) => ({ t: num(h?.t, shift, now), activity: activity(h?.activity), detail: str(h?.detail) })),
+    subagents: Array.isArray(a.subagents) ? a.subagents.filter((s) => typeof s === 'string').slice(0, MAX_AGENTS).map(pre) : [],
   };
 }
 
@@ -64,7 +82,7 @@ export class Room {
     if (env.agents.length > MAX_AGENTS) throw bad(`at most ${MAX_AGENTS} agents per person`);
     const name = str(env.user.name).trim().slice(0, NAME_MAX) || 'someone';
     const shift = Number.isFinite(env.now) ? serverNow - env.now : 0;
-    const agents = env.agents.map((a) => normalize(a, id, name, shift));
+    const agents = env.agents.map((a) => normalize(a, id, name, shift, serverNow));
     this.users.set(id, { name, lastPush: serverNow, agents });
     return id;
   }

@@ -187,8 +187,11 @@ npx wrangler secret put TEAM_KEY   # choose a long random key and give it to you
 npm run deploy                     # prints the office URL, for example https://agent-town.<you>.workers.dev
 ```
 
-The office runs on the Workers free plan: one Worker, one Durable Object, and the page from
-`client/` as static assets. To try it on your own computer first, copy
+The office is one Worker, one Durable Object, and the page from `client/` as static assets.
+The Workers free plan allows about 100,000 requests a day, and that is enough for a small
+team: a busy client sends at most one update every 3 seconds (and nothing when nothing
+changed), plus one every 20 seconds while it runs. For a bigger team, or a team that runs
+many agents all day, use the Workers Paid plan. To try it on your own computer first, copy
 `cloud/.dev.vars.example` to `cloud/.dev.vars` and run `npm run cloud:dev`
 (the office is then at `http://localhost:8787`).
 
@@ -222,8 +225,8 @@ goes to sleep, they leave after a minute.
 | `--port <n>`       | `4322` | port of the client's settings page |
 | `--demo`           | | share simulated agents, handy to try the office |
 
-The client sends at most one update per second, and one every 15 seconds so the office
-knows you are still there.
+There is one team key, not one key per person, so anyone with the key can push agents
+under any name. Give it only to people you trust.
 
 ## Privacy
 

@@ -47,8 +47,9 @@ my laptop                                     Cloudflare
   Subagents carry the parent's `sessionId` and `cwd`, so they follow the parent. A
   subagent whose parent is dropped is dropped too.
 - Pusher: sends `{ user: {id, name}, now, agents }` to `POST <server>/api/push` with
-  `Authorization: Bearer <key>`. It sends at most once per second after a change, and once
-  every 15 s as a heartbeat. On SIGINT/SIGTERM it sends `agents: []` so the person leaves
+  `Authorization: Bearer <key>`. It sends at most once every 3 s after a change (and skips a
+  push when only `lastEventAt` moved), and once every 20 s as a heartbeat. The free plan
+  allows about 100,000 requests a day for the whole team. On SIGINT/SIGTERM it sends `agents: []` so the person leaves
   at once. `userId` and `userName` on every agent come from the config, not the store.
 - Local page: the same guards as `server/index.js` (loopback `Host`, same `Origin`, JSON
   POST only). `GET /api/config` never returns the key, only `keySet: true|false`. The page
@@ -66,6 +67,10 @@ my laptop                                     Cloudflare
   - Ids: `id`, `parentId` and every entry of `subagents` get the prefix `<userId>:`, so ids
     from different people never collide and subagents keep their parents.
   - `userId` and `userName` on every agent are set from the envelope.
+  - Only known fields of known types pass. `activity` must be one of the office zones'
+    activities (else `idle`), `kind` is `main` or `subagent`, `source` is `claude-code` or
+    `codex`, and strings are cut to a fixed length. Anyone with the key can push, and every
+    viewer draws what is pushed.
   - `prune(serverNow)`: removes users with no push for 60 s.
   - `snapshot(serverNow)`: `{ mode: 'cloud', now, users: [{id, name}], agents }`.
   - `toJSON()` / `Room.from(json)`: the stored form.
@@ -73,11 +78,12 @@ my laptop                                     Cloudflare
   - Worker: `/api/push`, `/api/live` and `/api/mode` go to the one DO
     (`idFromName('office')`). Everything else is a static asset from `../client`.
   - Push: checks `Authorization` against `TEAM_KEY` (constant-time compare), limits the
-    body to 1 MB, stores the user's entry in `ctx.storage` under `user:<id>`, and
-    schedules a broadcast.
+    body to 1 MB, stores the user's entry in `ctx.storage` under `user:<id>` (at most once
+    every 15 s per user; memory is always current), and schedules a broadcast.
   - Hibernation: the DO constructor loads all `user:*` entries inside
     `blockConcurrencyWhile`. A storage alarm prunes stale users (and deletes their storage
-    entries) while any user is present. No `setTimeout` state is needed across evictions.
+    entries) every 30 s while any user is present, and every 5 s while a viewer has not sent
+    the key yet. No `setTimeout` state is needed across evictions.
   - Viewers: WebSocket with the hibernation API. The first message must be
     `{ type: 'auth', key }`. The socket's auth flag is in `serializeAttachment()`. A socket
     that is not authenticated in 5 s is closed (checked by the alarm and on each message).

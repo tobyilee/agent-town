@@ -80,6 +80,28 @@ test('room: bad envelopes are rejected with status 400', () => {
   assert.throws(() => room.push(envelope('u1', 'a', many), T), (e) => e.status === 400);
 });
 
+test('room: a hostile push cannot put markup or odd types in front of viewers', () => {
+  const room = new Room();
+  const evil = '"><img src=x onerror=alert(1)>';
+  room.push(envelope('u1', 'Eve', [{
+    id: 'x', activity: evil, kind: evil, source: evil, sessionId: { no: 1 }, cwd: 42, project: ['a'],
+    since: 'soon', history: [{ t: 'now', activity: evil, detail: 7, extra: evil }], isAdmin: true, __proto__: { polluted: true },
+  }]), T);
+  const [a] = room.snapshot(T).agents;
+  assert.equal(a.activity, 'idle');
+  assert.equal(a.kind, 'main');
+  assert.equal(a.source, 'claude-code');
+  assert.equal(a.sessionId, 'x');
+  assert.equal(a.cwd, '');
+  assert.equal(a.project, '');
+  assert.equal(a.since, T);
+  assert.deepEqual(a.history, [{ t: T, activity: 'idle', detail: '' }]);
+  assert.equal('isAdmin' in a, false);
+  // Known activities still get through.
+  room.push(envelope('u2', 'Bob', [agent('y', { activity: 'running' })]), T);
+  assert.equal(room.snapshot(T).agents.find((x) => x.userId === 'u2').activity, 'running');
+});
+
 test('room: a missing name falls back and long names are cut', () => {
   const room = new Room();
   room.push(envelope('u1', '', [agent('x')]), T);

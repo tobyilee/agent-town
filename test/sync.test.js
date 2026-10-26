@@ -110,7 +110,7 @@ test('client: shared sessions reach the office under my name, blocked ones never
   assert.equal((await block({ sessionId: victim.sessionId, blocked: true })).status, 200);
   assert.equal((await settings({ blockedFolders: [other.cwd] })).status, 200);
   const n = pushes.length;
-  await until(() => pushes.length > n + 2);
+  await until(() => pushes.length > n + 2, 20_000); // a push at most every 3 s
   assert.ok(pushes.slice(n + 1).some((p) => p.agents.length), 'the other sessions are still shared');
   for (const p of pushes.slice(n + 1)) {
     assert.equal(p.user.name, 'Toby');

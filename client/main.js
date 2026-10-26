@@ -228,7 +228,7 @@ function hover(e, p) {
   const tip = $('#tooltip');
   if (!c) { tip.hidden = true; return; }
   const a = c.agent;
-  tip.innerHTML = `<b>${esc(a.name)}${a.project ? ' · ' + esc(a.project) : ''}</b><span class="act ${a.activity}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</span>${esc(a.detail)}`;
+  tip.innerHTML = `<b>${esc(a.name)}${a.project ? ' · ' + esc(a.project) : ''}</b><span class="act ${esc(a.activity)}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</span>${esc(a.detail)}`;
   tip.style.left = `${Math.min(p.x + 16, stage.clientWidth - 300)}px`;
   tip.style.top = `${p.y + 16}px`;
   tip.hidden = false;
@@ -304,7 +304,7 @@ function rosterItem(a, sub) {
     ${avatar(a)}
     <span class="who"><span class="name">${sub ? '↳ ' : ''}${esc(a.name)}${!sub && a.project ? ` <span class="proj">· ${esc(a.project)}</span>` : ''}</span>
       <span class="title">${esc(!sub && a.title ? a.title : a.detail)}</span></span>
-    <span class="act ${a.activity}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}${a.activity === 'waiting' || a.activity === 'idle' ? ` · ${ago(a.since)}` : ''}</span></li>`;
+    <span class="act ${esc(a.activity)}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}${a.activity === 'waiting' || a.activity === 'idle' ? ` · ${ago(a.since)}` : ''}</span></li>`;
 }
 
 function renderDetail() {
@@ -319,7 +319,7 @@ function renderDetail() {
       <button class="close" title="Close (Esc)">×</button></div>
     ${a.title ? `<div class="task">${esc(a.title)}</div>` : ''}
     <div class="now"><div class="label">Right now · for ${ago(a.since)}</div>
-      <div class="what act ${a.activity}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</div>
+      <div class="what act ${esc(a.activity)}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</div>
       <div class="why">${esc(a.detail)}</div></div>
     <dl>
       ${cloud ? `<dt>Person</dt><dd>${esc(a.userName)}</dd>` : ''}
