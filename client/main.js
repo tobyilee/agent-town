@@ -59,22 +59,83 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
-// Live state from the server
-function connect() {
+// Live state from the server. The local server streams server-sent events; the
+// shared office on Cloudflare uses a WebSocket that needs the team key first.
+const mode = await fetch('api/mode').then((r) => (r.ok ? r.json() : {})).then((m) => m.mode || 'local', () => 'local');
+const cloud = mode === 'cloud';
+office.showOwner = cloud;
+document.body.classList.toggle('cloud', cloud);
+
+function online(on, label) {
+  $('#conn').classList.toggle('off', !on);
+  $('#conn-label').textContent = label;
+}
+
+function apply(state) {
+  agents = state.agents;
+  clockSkew = Date.now() - state.now;
+  office.update(agents);
+  renderRoster();
+  renderDetail();
+  $('#empty').hidden = agents.length > 0;
+}
+
+function connectLocal() {
   const es = new EventSource('api/events');
-  es.onopen = () => { $('#conn').classList.remove('off'); $('#conn-label').textContent = 'Live'; };
-  es.onerror = () => { $('#conn').classList.add('off'); $('#conn-label').textContent = 'Reconnecting…'; };
-  es.onmessage = (e) => {
-    const state = JSON.parse(e.data);
-    agents = state.agents;
-    clockSkew = Date.now() - state.now;
-    office.update(agents);
-    renderRoster();
-    renderDetail();
-    $('#empty').hidden = agents.length > 0;
+  es.onopen = () => online(true, 'Live');
+  es.onerror = () => online(false, 'Reconnecting…');
+  es.onmessage = (e) => apply(JSON.parse(e.data));
+}
+
+const KEY_ITEM = 'agent-town-key';
+const storedKey = () => { try { return localStorage.getItem(KEY_ITEM) || ''; } catch { return ''; } };
+const storeKey = (k) => { try { k ? localStorage.setItem(KEY_ITEM, k) : localStorage.removeItem(KEY_ITEM); } catch {} };
+
+function askKey(wrong) {
+  return new Promise((resolve) => {
+    const d = $('#key-dialog');
+    $('#key-note').textContent = wrong ? 'That key did not work. Check it with your team.' : '';
+    $('#team-key').value = '';
+    d.onclose = () => resolve($('#team-key').value.trim());
+    d.showModal();
+  });
+}
+
+async function connectCloud(wrong = false) {
+  let key = wrong ? '' : storedKey();
+  if (!key) {
+    online(false, 'Team key needed');
+    key = await askKey(wrong);
+    if (!key) return connectCloud();
+  }
+  const ws = new WebSocket(new URL('api/live', location.href.replace(/^http/, 'ws')));
+  let ping;
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'auth', key }));
+    ping = setInterval(() => ws.send('ping'), 30_000);
+  };
+  ws.onmessage = (e) => {
+    if (e.data === 'pong') return;
+    storeKey(key);
+    online(true, 'Live');
+    apply(JSON.parse(e.data));
+  };
+  ws.onclose = (e) => {
+    clearInterval(ping);
+    if (e.code === 4001) { storeKey(''); return connectCloud(true); }
+    online(false, 'Reconnecting…');
+    setTimeout(() => connectCloud(), 2000);
   };
 }
-connect();
+
+if (cloud) {
+  $('#open-settings').hidden = true;
+  $('#empty h2').textContent = 'Nobody is sharing right now';
+  $('#empty p').innerHTML = 'Run <code>npm run client</code> on your computer, set your name, this office\'s URL and the team key, and your agents walk in.';
+  connectCloud();
+} else {
+  connectLocal();
+}
 setInterval(() => { renderRoster(); renderDetail(); }, 1000);
 
 // ---- Moving around the office ------------------------------------------------
@@ -219,10 +280,20 @@ function renderRoster() {
   const rank = (a) => (a.activity === 'idle' ? 2 : a.activity === 'waiting' ? 1 : 0);
   const mains = agents.filter((a) => a.kind !== 'subagent').sort((a, b) => rank(a) - rank(b) || b.lastEventAt - a.lastEventAt);
   $('#count').textContent = mains.length ? mains.length : '';
-  const items = [];
+  // In a shared office, each person's agents sit under that person's name.
+  const people = new Map();
   for (const a of mains) {
-    items.push(rosterItem(a, false));
-    for (const s of agents.filter((x) => x.parentId === a.id)) items.push(rosterItem(s, true));
+    if (!people.has(a.userId)) people.set(a.userId, { name: a.userName, agents: [] });
+    people.get(a.userId).agents.push(a);
+  }
+  const grouped = cloud || people.size > 1;
+  const items = [];
+  for (const p of [...people.values()].sort((x, y) => x.name.localeCompare(y.name))) {
+    if (grouped) items.push(`<li class="person"><span>${esc(p.name)}</span><span class="n">${p.agents.length}</span></li>`);
+    for (const a of p.agents) {
+      items.push(rosterItem(a, false));
+      for (const s of agents.filter((x) => x.parentId === a.id)) items.push(rosterItem(s, true));
+    }
   }
   $('#roster').innerHTML = items.join('') || '<li class="empty">Nobody is here yet.</li>';
   for (const li of $('#roster').querySelectorAll('li[data-id]')) li.onclick = () => select(li.dataset.id);
@@ -251,6 +322,7 @@ function renderDetail() {
       <div class="what act ${a.activity}">${esc(ACTIVITY_LABEL[a.activity] || a.activity)}</div>
       <div class="why">${esc(a.detail)}</div></div>
     <dl>
+      ${cloud ? `<dt>Person</dt><dd>${esc(a.userName)}</dd>` : ''}
       ${a.project ? `<dt>Project</dt><dd>${esc(a.project)}</dd>` : ''}
       ${a.branch ? `<dt>Branch</dt><dd>${esc(a.branch)}</dd>` : ''}
       ${a.model ? `<dt>Model</dt><dd>${esc(a.model)}</dd>` : ''}

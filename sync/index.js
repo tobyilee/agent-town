@@ -51,10 +51,12 @@ const pusher = new Pusher({
 store.on('change', () => pusher.changed());
 
 // Every session on this computer, blocked or not, so the page can unblock them.
+// A fixed order, so rows do not move under the mouse while agents work.
 function sessions() {
   const all = store.snapshot().agents;
   const shared = new Set(shareable(all, cfg).map((a) => a.id));
-  return all.filter((a) => a.kind !== 'subagent').sort((a, b) => b.lastEventAt - a.lastEventAt).map((a) => ({
+  const label = (a) => a.project || a.cwd || a.name;
+  return all.filter((a) => a.kind !== 'subagent').sort((a, b) => label(a).localeCompare(label(b)) || a.sessionId.localeCompare(b.sessionId)).map((a) => ({
     id: a.id, sessionId: a.sessionId, source: a.source, name: a.name, project: a.project, title: a.title, cwd: a.cwd,
     activity: a.activity, lastEventAt: a.lastEventAt, subagents: a.subagents.length,
     shared: shared.has(a.id), reason: blockReason(a, cfg),
