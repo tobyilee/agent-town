@@ -1,0 +1,2 @@
+# Copy to .dev.vars for `npm run dev`. In production use `npx wrangler secret put TEAM_KEY`.
+TEAM_KEY=change-me

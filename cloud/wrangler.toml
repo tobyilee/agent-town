@@ -1,0 +1,18 @@
+# The shared Agent Town office. See "Shared office on Cloudflare" in the README.
+name = "agent-town"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# The office page is the same one the local server serves.
+[assets]
+directory = "../client"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[durable_objects.bindings]]
+name = "OFFICE"
+class_name = "Office"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Office"]

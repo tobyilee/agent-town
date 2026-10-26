@@ -391,7 +391,9 @@ export class Office {
     const a = c.agent;
     const sub = a.kind === 'subagent';
     const name = a.name;
-    const project = !sub && a.project ? a.project : '';
+    // In the shared office the tag also says whose agent it is.
+    const owner = this.showOwner && !sub ? a.userName : '';
+    const project = [owner, !sub && a.project ? a.project : ''].filter(Boolean).join(' · ');
     ctx.font = `700 ${sub ? 11 : 12}px ${FONT}`;
     const nw = ctx.measureText(name).width;
     ctx.font = `500 ${sub ? 11 : 12}px ${FONT}`;

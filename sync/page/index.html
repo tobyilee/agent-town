@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Town client</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="logo">🏢</span> Agent Town client</div>
+    <div class="status"><span id="dot" class="dot off"></span><span id="status">Connecting…</span></div>
+  </header>
+  <main>
+    <section class="card">
+      <h2>You and the shared office</h2>
+      <form id="you">
+        <label class="field">Your name in the office <input id="name" type="text" maxlength="40" autocomplete="off"></label>
+        <label class="field">Office URL <input id="server" type="url" placeholder="https://agent-town.your-team.workers.dev" spellcheck="false"></label>
+        <label class="field">Team key
+          <span class="row"><input id="key" type="password" autocomplete="off" spellcheck="false"><button id="clear-key" type="button" class="btn ghost" hidden>Remove key</button></span>
+        </label>
+        <div class="actions"><span id="you-note" class="muted small"></span><button class="btn primary">Save</button></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Sessions on this computer <span id="count" class="count"></span></h2>
+      <p class="muted">Only <b>shared</b> sessions leave this computer. A blocked session stays blocked when it comes back.</p>
+      <ul id="sessions"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Blocked folders</h2>
+      <p class="muted">Sessions in these folders, and in every folder inside them, are never shared.</p>
+      <ul id="folders"></ul>
+      <form id="add-folder" class="row"><input id="folder" type="text" placeholder="~/work/secret-client" spellcheck="false"><button class="btn">Block folder</button></form>
+    </section>
+
+    <p id="file" class="muted small"></p>
+  </main>
+  <script type="module" src="page.js"></script>
+</body>
+</html>

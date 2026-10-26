@@ -84,6 +84,10 @@ aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; min-heig
 #roster .title { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #roster .act { font-size: 12px; font-weight: 700; white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: rgba(124, 108, 240, .18); color: #cfc7ff; }
 #roster .empty { color: var(--muted); cursor: default; }
+#roster li.person { cursor: default; margin-top: 8px; padding: 4px 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); border-bottom: 1px solid var(--line); border-radius: 0; }
+#roster li.person:first-child { margin-top: 0; }
+#roster li.person:hover { background: none; }
+#roster li.person .n { margin-left: auto; font-weight: 700; }
 #roster .empty:hover { background: none; }
 .act.waiting { color: var(--waiting) !important; background: rgba(245, 197, 66, .14) !important; }
 .act.idle { opacity: .6; }

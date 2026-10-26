@@ -27,6 +27,7 @@ is a room, and the ones waiting for you sit in the Lounge with a coffee.
 - **One look tells you who needs you** – agents that finished their turn (or asked you a question) go to the Lounge.
 - **Subagents too** – when Claude Code delegates, each subagent gets its own small character.
 - **Local and lightweight** – a small Node server with zero npm dependencies, listening on `127.0.0.1` only.
+- **Or shared with your team** – run the office on Cloudflare and each person shares their agents with `agent-town-client`, blocking what they want to keep private.
 
 ![The whole office with five agents at work](docs/office.jpg)
 
@@ -136,6 +137,9 @@ Other settings in the config file:
   a spot in the room for its activity, and walks it there along a grid path.
   `client/office-map.js` is the floor plan (rooms, walls, doors, spots, furniture), and
   `client/floor.js` paints the floors and walls once.
+- `sync/` is agent-town-client: the same watcher and store, a block filter (`sync/filter.js`)
+  and a pusher. `cloud/` is the Worker; `cloud/room.js` merges everyone's agents (it gives
+  each id the person's id in front, and moves each person's times to the server's clock).
 
 ## Art
 
@@ -160,6 +164,70 @@ none of this.
 Text uses [Pretendard](https://github.com/orioncactus/pretendard) by Kil Hyung-jin, bundled
 under the SIL Open Font License ([`client/assets/fonts/LICENSE-Pretendard.txt`](client/assets/fonts/LICENSE-Pretendard.txt)).
 
+## A shared office on Cloudflare
+
+Agent Town can also run as one office for your whole team on Cloudflare. Each person runs
+**agent-town-client** on their own computer. It reads that person's logs, like the local
+office does, and pushes the agents they share to the cloud office, where they show under
+the person's name. Many people can push at the same time.
+
+```
+your laptop                                     Cloudflare
+agent-town-client ── POST /api/push ─────────▶ Worker + Durable Object ── WebSocket ──▶ browsers
+ (logs → agents → block filter)   team key       (one shared office)        team key
+```
+
+### 1. Put the office on Cloudflare (once per team)
+
+```bash
+cd cloud
+npm install
+npx wrangler login
+npx wrangler secret put TEAM_KEY   # choose a long random key and give it to your team
+npm run deploy                     # prints the office URL, for example https://agent-town.<you>.workers.dev
+```
+
+The office is one Worker, one Durable Object, and the page from `client/` as static assets.
+The Workers free plan allows about 100,000 requests a day, and that is enough for a small
+team: a busy client sends at most one update every 3 seconds (and nothing when nothing
+changed), plus one every 20 seconds while it runs. For a bigger team, or a team that runs
+many agents all day, use the Workers Paid plan. To try it on your own computer first, copy
+`cloud/.dev.vars.example` to `cloud/.dev.vars` and run `npm run cloud:dev`
+(the office is then at `http://localhost:8787`).
+
+Open the office URL, enter the team key once (the browser keeps it), and you see everyone
+who is sharing.
+
+### 2. Share your agents (each person)
+
+```bash
+npm run client         # or: node sync/index.js
+```
+
+Open **http://localhost:4322** and set:
+
+- **Your name in the office**: your agents are listed under it.
+- **Office URL** and **team key**: from step 1.
+
+The page lists every session on your computer. Click **Share** to switch a session to
+**Blocked**, or **Block folder** to block every session in that folder and the folders inside
+it (you can also type a folder, such as `~/work/secret-client`). Blocked sessions stay blocked
+when they come back, and **they never leave your computer**: the client filters them out
+before it sends anything. While a folder is blocked, a new session is held back until its
+folder is known.
+
+When you stop the client (Ctrl+C), your agents leave the office at once. If your computer
+goes to sleep, they leave after a minute.
+
+| Client setting     | Where | Meaning |
+|--------------------|-------|---------|
+| config file        | `~/.agent-town/client.json` (`--config <file>`, `AGENT_TOWN_CLIENT_CONFIG`) | name, office URL, team key, blocked sessions and folders, log folders |
+| `--port <n>`       | `4322` | port of the client's settings page |
+| `--demo`           | | share simulated agents, handy to try the office |
+
+There is one team key, not one key per person, so anyone with the key can push agents
+under any name. Give it only to people you trust.
+
 ## Privacy
 
 Agent Town reads your agents' session logs on your own machine and serves the office to
@@ -171,21 +239,28 @@ activity), and it only accepts settings changes sent as JSON from its own page (
 cross-site requests). There is no login, so keep the port on your machine: do not forward
 or expose it to a network you do not trust.
 
+In the shared office, what you share leaves your computer: the agents' names, projects,
+folders, branches, models, task titles and recent activity (for example the files they
+read and the commands they run). Block a session or a folder to keep it on your computer.
+The team key protects both pushing and viewing, so give it only to your team. The client
+sends it only over `https` (plain `http` is allowed only for an office on `localhost`), and
+its settings page never shows the saved key again. The cloud office keeps only the latest
+state of each person, and forgets a person a minute after their last update.
+
 ## Development
 
 ```bash
-npm test     # parser, store, restart and floor-plan tests (node:test)
-npm run demo # simulated agents, handy when working on the office
+npm test              # parser, store, floor-plan, client and cloud-office tests (node:test)
+npm run demo          # simulated agents, handy when working on the office
+npm run cloud:dev     # the cloud office on http://localhost:8787 (needs cloud/.dev.vars)
+npm run client:demo   # a client that shares simulated agents
 ```
+
+To see several people in one office, run more demo clients, each with its own config file and
+port: `node sync/index.js --demo --port 4323 --config /tmp/mina.json`.
 
 The floor-plan tests check that every spot is free, inside its room and reachable from the
 front door, so you can move furniture around in `client/office-map.js` with confidence.
-
-## Roadmap: a shared office
-
-Agents already carry a `userId` and `userName`, and the office is drawn from a plain
-snapshot. The next step is a small relay that merges the snapshots of several developers'
-Agent Town servers into one shared office, with each person's name on their agents' tags.
 
 ## License
 
